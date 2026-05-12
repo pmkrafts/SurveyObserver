@@ -1,12 +1,21 @@
 import request from "supertest";
 import { app } from "@/app";
-import { userRepository } from "@/repositories/user.repository";
+import { prisma } from "@/config/prisma";
+
+beforeAll(async () => {
+  await prisma.user.deleteMany();
+});
+
+afterAll(async () => {
+  await prisma.user.deleteMany();
+  await prisma.$disconnect();
+});
+
+beforeEach(async () => {
+  await prisma.user.deleteMany();
+});
 
 describe("API starter", () => {
-  beforeEach(() => {
-    userRepository.reset();
-  });
-
   it("GET /api/v1/health returns server status", async () => {
     const response = await request(app).get("/api/v1/health");
 
@@ -18,6 +27,8 @@ describe("API starter", () => {
   });
 
   it("GET /api/v1/users returns users list", async () => {
+    await prisma.user.create({ data: { name: "Seed User", email: "seed@example.com" } });
+
     const response = await request(app).get("/api/v1/users");
 
     expect(response.status).toBe(200);
@@ -47,3 +58,4 @@ describe("API starter", () => {
     expect(response.body.data.email).toBe("maya@example.com");
   });
 });
+

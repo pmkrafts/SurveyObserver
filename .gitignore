@@ -10,3 +10,10 @@ build/
 coverage/
 *.tsbuildinfo
 INSTRUCTIONS/
+docs/
+
+# Docker volumes (local development)
+postgres_data/
+redis_data/
+*.db
+*.pid

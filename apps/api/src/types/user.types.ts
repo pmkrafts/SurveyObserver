@@ -1,7 +1,9 @@
 export interface User {
-  id: string;
+  id: number;
   name: string;
   email: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface CreateUserInput {

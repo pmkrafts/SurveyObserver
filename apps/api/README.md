@@ -46,3 +46,22 @@ Tests call the Express app directly, so no separate server process is required.
 ## Environment
 
 Copy `.env.example` to `.env` and adjust values as needed.
+
+## Database & Cache (Local Development)
+
+Start PostgreSQL and Redis from the monorepo root:
+
+```bash
+# From root folder
+docker-compose up -d
+
+# Stop services
+docker-compose down
+
+# Reset data (remove volumes)
+docker-compose down -v
+```
+
+Services:
+- **PostgreSQL**: localhost:5432 (user: postgres, password: postgres, db: api_dev)
+- **Redis**: localhost:6379

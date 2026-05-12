@@ -3,12 +3,12 @@ import { AppError } from "@/utils/appError";
 import { CreateUserInput, User } from "@/types/user.types";
 
 export class UserService {
-  getUsers(): User[] {
+  async getUsers(): Promise<User[]> {
     return userRepository.findAll();
   }
 
-  getUserById(id: string): User {
-    const user = userRepository.findById(id);
+  async getUserById(id: number): Promise<User> {
+    const user = await userRepository.findById(id);
 
     if (!user) {
       throw new AppError("User not found", 404);
@@ -17,7 +17,7 @@ export class UserService {
     return user;
   }
 
-  createUser(input: CreateUserInput): User {
+  async createUser(input: CreateUserInput): Promise<User> {
     return userRepository.create(input);
   }
 }

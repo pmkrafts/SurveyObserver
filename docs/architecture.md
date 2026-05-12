@@ -2,158 +2,121 @@
 
 ## 1. Overview
 
-This repository is a monorepo for a survey observability platform. It is set up to host:
+This repository is a monorepo for a survey observability platform with a working API and frontend integration.
 
-- A backend API service (Express + TypeScript)
-- A frontend web application (React + Vite + TypeScript)
-- Shared packages for cross-app contracts and telemetry utilities
-- A simulator app for generating test traffic/events
+Current implemented stack:
 
-The project already has the foundation for observability-first development (OpenTelemetry dependencies and dedicated telemetry folders), while most domain features are still scaffolded.
+- Backend API: Express + TypeScript + Prisma
+- Database: PostgreSQL (Docker)
+- Cache: Redis (Docker, provisioned)
+- Frontend: React + Vite + TypeScript
+- Tests: Jest + Supertest (API integration and endpoint coverage)
 
 ## 2. Monorepo Structure
 
-Root-level orchestration:
+Root uses npm workspaces and Turbo.
 
-- package manager workspaces via root `package.json`
-- TurboRepo task orchestration via `turbo.json`
-- `apps/*` for deployable applications
-- `packages/*` for reusable libraries
+- apps/api: backend service
+- apps/frontend: web client
+- apps/simulator: placeholder app
+- packages/shared-types: placeholder package
+- packages/tracing-sdk: placeholder package
+- docs: architecture and design documents
 
-Current workspace layout:
+## 3. Implemented Backend Architecture
 
-- `apps/api`: Node.js backend service
-- `apps/frontend`: React web client
-- `apps/simulator`: planned traffic/event simulator (currently empty)
-- `packages/shared-types`: planned shared TypeScript contracts (currently empty)
-- `packages/tracing-sdk`: planned shared telemetry SDK/helpers (currently empty)
-- `docs`: architecture and design documentation
+The API follows a layered design:
 
-## 3. Current Implementation Status
+Route -> Controller -> Service -> Repository
 
-Implemented now:
+Implemented layers:
 
-- Frontend Vite + React starter app is running baseline UI scaffolding.
-- API environment validation exists in `apps/api/src/config/env.ts` using Zod.
-- API folder boundaries are created (`controllers`, `routes`, `services`, etc.), but implementation files are not present yet.
+- routes: API versioning and endpoint mapping
+- controllers: request validation and response mapping
+- services: domain logic and error handling
+- repositories: Prisma-backed data access
+- middlewares: request logging, 404 handler, centralized error handling
+- config: environment loading and Prisma bootstrap
 
-Scaffolded but not implemented yet:
+Key backend endpoints:
 
-- API server bootstrap and route wiring
-- business/domain logic
-- data repositories and persistence integration
-- socket event pipeline
-- telemetry initialization/export pipeline
-- shared type definitions package
-- shared tracing SDK package
-- simulator app logic
+- GET /api/v1/health
+- GET /api/v1/users
+- GET /api/v1/users/:id
+- POST /api/v1/users
 
-## 4. Logical Architecture (Target Shape)
+## 4. Data Architecture
 
-### 4.1 Frontend (apps/frontend)
+Prisma schema is implemented in apps/api/prisma/schema.prisma.
 
-Responsibilities:
+Current data model:
 
-- Render dashboards and investigation views for survey health
-- Query API endpoints for metrics and diagnostics
-- Subscribe to real-time updates over Socket.IO
-- Emit frontend traces for user actions and API latency
+- User
+	- id: Int (autoincrement primary key)
+	- email: String (unique)
+	- name: String
+	- createdAt: DateTime
+	- updatedAt: DateTime
 
-Planned page/domain areas already reflected by folders:
+The table is mapped as users in PostgreSQL.
 
-- `pages/api-health`
-- `pages/dashbaord` (name currently misspelled in folder)
-- `pages/drop-analysis`
-- `pages/respondent`
+## 5. Environment and Config Model
 
-### 4.2 API (apps/api)
+Environment files are kept at monorepo root.
 
-Layered structure implied by folder boundaries:
+API config includes a monorepo-aware env loader that checks multiple candidate paths so the app works when started from either root or apps/api.
 
-- `routes`: HTTP route mapping and versioning
-- `controllers`: request parsing, response mapping
-- `services`: business and aggregation logic
-- `repositories`: data access abstraction
-- `middlewares`: auth, validation, error handling, rate limiting
-- `sockets`: real-time event namespaces/channels
-- `telemetry`: tracing/metrics instrumentation bootstrap
-- `utils`: cross-cutting helpers
+Important env values currently in use:
 
-Configuration:
+- PORT=4000
+- DATABASE_URL=postgresql://postgres:postgres@localhost:5433/api_dev
+- REDIS_URL=redis://localhost:6379
 
-- `config/env.ts` validates runtime settings (port, CORS, URLs, JWT secret, OTEL endpoint, rate-limit knobs, log settings).
+## 6. Local Infrastructure
 
-### 4.3 Shared Packages (packages/*)
+Root docker-compose provides local data services:
 
-Intended contract between apps:
+- PostgreSQL 16 (container survey-postgres)
+- Redis 7 (container survey-redis)
 
-- `shared-types`: DTOs, event schemas, API response types, socket payload types
-- `tracing-sdk`: reusable instrumentation wrappers, span naming conventions, context propagation helpers
+Important port mapping:
 
-### 4.4 Simulator (apps/simulator)
+- Postgres host port is 5433 (container 5432)
 
-Intended purpose:
+Reason: avoid conflict with local PostgreSQL installed on host 5432.
 
-- Generate synthetic survey traffic/failures
-- Publish events to exercise API + socket + telemetry paths
-- Support local and CI load/chaos scenarios
+## 7. Frontend Runtime Integration
 
-## 5. Runtime Interaction Model
+Frontend uses a typed API client in apps/frontend/src/api/users.ts.
 
-Primary request/stream flow:
+Implemented client calls:
 
-1. User interacts with frontend dashboard.
-2. Frontend calls API endpoints and/or opens Socket.IO channel.
-3. API routes delegate to controllers, then services.
-4. Services use repositories for persistence or external data sources.
-5. API emits real-time state updates via sockets.
-6. Frontend updates visualizations in near real-time.
-7. Telemetry spans/metrics are emitted by both frontend and backend to OTEL collector/backend.
+- getUsers
+- getUserById
+- createUser
 
-## 6. Observability Architecture
+Vite dev proxy forwards /api/* to http://localhost:4000 to avoid CORS issues in local development.
 
-Dependency-level readiness already exists:
+## 8. Runtime Flow
 
-- Backend includes OpenTelemetry Node SDK and auto-instrumentation packages.
-- Frontend includes OpenTelemetry web tracing packages for fetch and XHR instrumentation.
+1. Frontend loads users via GET /api/v1/users.
+2. API route delegates to controller, service, and repository.
+3. Repository executes Prisma query against PostgreSQL.
+4. Response returns standardized payload shape.
+5. Frontend create form submits POST /api/v1/users and updates local state with created record.
 
-Planned observability model:
+## 9. Validation Status
 
-- Trace context propagation from browser to API
-- Standardized service/resource attributes
-- Correlated spans for HTTP and Socket.IO operations
-- Environment-driven OTLP endpoint configuration
+Current verified status:
 
-## 7. Infrastructure and Deployment Notes
+- API tests passing (13 tests)
+- GET /api/v1/users returns 200
+- POST /api/v1/users returns 201 and persists row
+- Frontend renders users and can create users
 
-Current state:
+## 10. Known Gaps
 
-- `docker-compose.yml` exists but is currently empty.
-
-Expected near-term infrastructure shape:
-
-- API container
-- Frontend container (or static hosting)
-- datastore/cache services as needed
-- OpenTelemetry collector and backend (Jaeger/Tempo/Grafana stack or equivalent)
-
-## 8. Risks and Gaps (Current)
-
-- Most architecture is structural/scaffolded, not yet executable end-to-end.
-- No implemented shared contracts yet; risk of type drift between frontend and API.
-- No telemetry bootstrap code yet; observability dependencies are present but not wired.
-- Empty infra compose file blocks reproducible local environment setup.
-
-## 9. Recommended Build Sequence
-
-1. Implement API bootstrap + health route + centralized error middleware.
-2. Implement shared-types package and consume it in frontend/API.
-3. Add basic repository + service flow for one dashboard use case.
-4. Add Socket.IO server/client integration for a single live metric.
-5. Wire OTEL tracing in backend and frontend with context propagation.
-6. Fill docker-compose for local stack (API, frontend, collector, backing services).
-7. Implement simulator traffic profiles for regression and load validation.
-
----
-
-This document describes the architecture as of the current repository state and should be updated as implementation files are added.
+- Redis is provisioned but not yet used by API logic.
+- Shared packages are present but not implemented.
+- Simulator app remains a placeholder.
+- Telemetry dependencies exist in frontend but cross-service tracing pipeline is not fully documented yet.
