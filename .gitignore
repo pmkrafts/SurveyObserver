@@ -9,4 +9,4 @@ build/
 !.env.example
 coverage/
 *.tsbuildinfo
-instructions/
+INSTRUCTIONS/
