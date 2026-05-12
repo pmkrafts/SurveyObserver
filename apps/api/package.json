@@ -1,29 +1,43 @@
 {
   "name": "api",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Learning-first Node + Express + TypeScript API starter",
+  "main": "dist/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "ts-node-dev --respawn --transpile-only -r tsconfig-paths/register src/server.ts",
+    "build": "tsc -p tsconfig.json && tsc-alias -p tsconfig.json",
+    "start": "node dist/server.js",
+    "test": "jest --runInBand",
+    "lint": "eslint . --ext .ts",
+    "format": "prettier --write ."
   },
-  "keywords": [],
+  "keywords": [
+    "express",
+    "typescript",
+    "starter"
+  ],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
-    "@opentelemetry/auto-instrumentations-node": "^0.75.0",
-    "@opentelemetry/sdk-node": "^0.217.0",
-    "@opentelemetry/sdk-trace-node": "^2.7.1",
-    "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1",
-    "socket.io": "^4.8.3",
-    "zod": "^4.4.3"
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
-    "@types/node": "^25.7.0",
+    "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.14.10",
+    "@types/supertest": "^6.0.2",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.7.0",
+    "eslint-config-prettier": "^9.1.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.3.2",
+    "supertest": "^7.0.0",
+    "tsc-alias": "^1.8.10",
+    "ts-jest": "^29.2.5",
     "ts-node-dev": "^2.0.0",
-    "typescript": "^6.0.3"
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.5.4"
   }
 }

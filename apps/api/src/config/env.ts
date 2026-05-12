@@ -1,30 +1,19 @@
-import { z } from "zod";
+import dotenv from "dotenv";
 
-const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-  PORT: z.coerce.number().int().positive().default(4000),
-  DATABASE_URL: z.string().url(),
-  REDIS_URL: z.string().url(),
-  CORS_ORIGINS: z.string().default("http://localhost:5173"),
-  JWT_SECRET: z.string().min(32),
-  OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().default("http://localhost:4317"),
-  OTEL_SERVICE_NAME: z.string().default("suobserve-api"),
-  OTEL_SERVICE_VERSION: z.string().default("1.0.0"),
-  LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
-  LOG_PRETTY: z.coerce.boolean().default(false),
-  RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60_000),
-  RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().positive().default(200),
-});
+dotenv.config();
 
-function parseEnv() {
-  const result = envSchema.safeParse(process.env);
-  if (!result.success) {
-    console.error("❌  Invalid environment variables:");
-    console.error(result.error.flatten().fieldErrors);
-    process.exit(1);
+function readPort(value: string | undefined, fallback: number): number {
+  const parsed = Number(value);
+  if (Number.isInteger(parsed) && parsed > 0) {
+    return parsed;
   }
-  return result.data;
+  return fallback;
 }
 
-export const env = parseEnv();
-export type Env = z.infer<typeof envSchema>;
+export const env = {
+  NODE_ENV: process.env.NODE_ENV ?? "development",
+  PORT: readPort(process.env.PORT, 4000),
+  LOG_LEVEL: process.env.LOG_LEVEL ?? "info",
+  DATABASE_URL: process.env.DATABASE_URL ?? "postgresql://api_user:api_password@localhost:5432/api_db",
+  REDIS_URL: process.env.REDIS_URL ?? "redis://:redis_password@localhost:6379"
+} as const;
